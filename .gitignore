@@ -1,0 +1,7 @@
+# Build artifacts
+archiver-bot
+*.o
+
+# Test output
+*.gwtar.html
+www.*/
