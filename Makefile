@@ -1,7 +1,7 @@
-# archiver-bot - suckless web archiver
+# sbot - Simple Archiver Bot
 # See LICENSE file for copyright and license details.
 
-VERSION = 0.2.0
+VERSION = 0.3.0
 
 # paths
 PREFIX = /usr/local
@@ -20,26 +20,26 @@ LDFLAGS  = $(LIBS)
 CC = cc
 
 # sources
-SRC = archiver.c crawl.c fetch.c parse.c robots.c util.c
+SRC = archiver.c crawl.c detect.c fetch.c parse.c robots.c util.c
 OBJ = $(SRC:.c=.o)
 
-all: archiver-bot
+all: sbot
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
-archiver-bot: $(OBJ)
+sbot: $(OBJ)
 	$(CC) -o $@ $(OBJ) $(LDFLAGS)
 
 clean:
-	rm -f archiver-bot $(OBJ)
+	rm -f sbot $(OBJ)
 
 install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp -f archiver-bot $(DESTDIR)$(PREFIX)/bin
-	chmod 755 $(DESTDIR)$(PREFIX)/bin/archiver-bot
+	cp -f sbot $(DESTDIR)$(PREFIX)/bin
+	chmod 755 $(DESTDIR)$(PREFIX)/bin/sbot
 
 uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/archiver-bot
+	rm -f $(DESTDIR)$(PREFIX)/bin/sbot
 
 .PHONY: all clean install uninstall

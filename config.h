@@ -1,5 +1,5 @@
 /* See LICENSE file for copyright and license details.
- * archiver-bot - suckless web archiver
+ * sbot - Simple Archiver Bot
  * configuration header
  */
 
@@ -9,10 +9,10 @@
 /* Archiver metadata */
 #define ARCHIVER_NAME    "Kris Yotam"
 #define ARCHIVER_SITE    "krisyotam.com"
-#define ARCHIVER_VERSION "0.2.0"
+#define ARCHIVER_VERSION "0.3.0"
 
 /* Network settings */
-#define USER_AGENT       "archiver-bot/0.2 (+https://krisyotam.com)"
+#define USER_AGENT       "sbot/0.3 (+https://krisyotam.com)"
 #define CONNECT_TIMEOUT  30L
 #define REQUEST_TIMEOUT  60L
 #define MAX_REDIRECTS    10L

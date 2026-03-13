@@ -12,7 +12,7 @@
 /*
  * Parse robots.txt content for our user-agent.
  *
- * We look for rules matching "archiver-bot" first,
+ * We look for rules matching "sbot" first,
  * then fall back to "*" (wildcard) rules.
  */
 Robots *
@@ -73,7 +73,7 @@ robots_fetch(const char *domain)
 
 		if (strcasecmp(key, "user-agent") == 0) {
 			/* New user-agent group */
-			if (strcasestr(val, "archiver-bot")) {
+			if (strcasestr(val, "sbot")) {
 				in_our_group = 1;
 				in_star_group = 0;
 				found_our_group = 1;

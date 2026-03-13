@@ -1,6 +1,6 @@
 /* See LICENSE file for copyright and license details.
  *
- * archiver-bot - suckless web archiver
+ * sbot - Simple Archiver Bot
  *
  * Creates self-contained archives of websites with all
  * resources inlined as data URIs.
@@ -16,6 +16,7 @@
 
 #include "config.h"
 #include "crawl.h"
+#include "detect.h"
 #include "fetch.h"
 #include "parse.h"
 #include "robots.h"
@@ -34,7 +35,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: archiver-bot [-vrR] [-d depth] [-o dir]"
+	    "usage: sbot [-vrR] [-d depth] [-o dir]"
 	    " [-a author] url\n"
 	    "\n"
 	    "  -v          verbose output\n"
@@ -139,7 +140,7 @@ generate_header(const char *title, const char *source_url)
 	    "  Archived on:  %s\n"
 	    "  Archive date: %s\n"
 	    "\n"
-	    "  Generator:    archiver-bot/%s\n"
+	    "  Generator:    sbot/%s\n"
 	    "  Format:       GWTAR (Gwern Web Tar Archive)\n"
 	    "\n"
 	    "========================================"
@@ -503,6 +504,16 @@ archive_page(const char *url)
 		return 0;
 	}
 
+	/* Detect CMS type for informational output */
+	{
+		SiteInfo *sinfo;
+
+		sinfo = detect_site(resp->data, url);
+		if (sinfo->type != SITE_UNKNOWN)
+			fprintf(stderr, "  CMS: %s\n", sinfo->name);
+		siteinfo_free(sinfo);
+	}
+
 	final_url = resp->final_url ? resp->final_url : url;
 	rel_path = url_to_path(url, base_domain);
 
@@ -554,6 +565,59 @@ crawl_site(const char *start_url)
 	visited_add(visited, norm);
 	free(norm);
 	queue_push(queue, start_url, 0);
+
+	/* Detect CMS type from the start page */
+	{
+		Response *detect_resp;
+		SiteInfo *sinfo;
+
+		detect_resp = fetch_url(start_url);
+		if (detect_resp && detect_resp->status_code < 400 &&
+		    detect_resp->data) {
+			sinfo = detect_site(detect_resp->data,
+			                    start_url);
+			if (sinfo->type != SITE_UNKNOWN) {
+				char **seeds;
+				int nseed, i;
+
+				fprintf(stderr,
+				    "Detected CMS: %s\n",
+				    sinfo->name);
+				if (sinfo->feed_url)
+					fprintf(stderr,
+					    "  feed: %s\n",
+					    sinfo->feed_url);
+				if (sinfo->sitemap_url)
+					fprintf(stderr,
+					    "  sitemap: %s\n",
+					    sinfo->sitemap_url);
+
+				/* Add CMS-specific seed URLs */
+				seeds = detect_seed_urls(sinfo,
+				    base_domain, &nseed);
+				for (i = 0; i < nseed; i++) {
+					norm = url_normalize(
+					    seeds[i]);
+					if (!visited_contains(
+					    visited, norm)) {
+						visited_add(
+						    visited, norm);
+						queue_push(queue,
+						    seeds[i], 0);
+						if (verbose)
+							fprintf(stderr,
+							    "  seed: %s\n",
+							    seeds[i]);
+					}
+					free(norm);
+					free(seeds[i]);
+				}
+				free(seeds);
+			}
+			siteinfo_free(sinfo);
+		}
+		response_free(detect_resp);
+	}
 
 	pages_archived = 0;
 	start_time = time(NULL);
@@ -673,7 +737,7 @@ main(int argc, char *argv[])
 
 	fetch_init();
 
-	fprintf(stderr, "archiver-bot %s\n", ARCHIVER_VERSION);
+	fprintf(stderr, "sbot %s\n", ARCHIVER_VERSION);
 	fprintf(stderr, "Target: %s\n", url);
 	fprintf(stderr, "Output: %s/\n", output_dir);
 	if (recursive)

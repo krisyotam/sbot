@@ -1,11 +1,12 @@
-# archiver-bot — CLAUDE.md
+# sbot — CLAUDE.md
 
 ## Project
 
-archiver-bot is a suckless web archiver written in C. It creates
-self-contained archives of websites with all resources (CSS, images,
-fonts) inlined as data URIs. Supports single-page and recursive
-whole-site archival with GWTAR (Gwern Web Tar Archive) format headers.
+sbot (Simple Archiver Bot) is a suckless web archiver written in C. It
+creates self-contained archives of websites with all resources (CSS,
+images, fonts) inlined as data URIs. Supports single-page archival in
+GWTAR (Gwern Web Tar Archive) format and recursive whole-site archival
+with navigable directory structure.
 
 ## Coding Standards — Suckless C Style
 
@@ -41,7 +42,7 @@ All code in this project MUST follow the suckless.org coding style:
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: archiver-bot [-v] [-r] url\n");
+	fprintf(stderr, "usage: sbot [-v] [-r] url\n");
 	exit(1);
 }
 ```
@@ -96,6 +97,8 @@ usage(void)
 | Crawler | `queue_`, `visited_` | crawl.c | URL queue (BFS), visited set, URL normalization, path conversion |
 | Fetcher | `fetch_` | fetch.c | HTTP fetching via libcurl, response management |
 | Parser | `reslist_`, `parse_` | parse.c | HTML parsing, resource extraction, image inlining |
+| Robots | `robots_` | robots.c | robots.txt fetching, parsing, and rule matching |
+| Detect | `detect_`, `siteinfo_` | detect.c | CMS/framework detection (WordPress, Blogger, Hugo, Jekyll, Ghost, Drupal, MediaWiki) |
 | Utilities | `die`, `warn`, `x*`, `str_*`, `url_*` | util.c | Memory wrappers, string ops, URL helpers, base64, MIME types |
 | Config | — | config.h | Compile-time constants (timeouts, limits, user agent) |
 
@@ -114,11 +117,12 @@ usage(void)
 - **Depth control.** Hard limit on crawl depth to prevent runaway.
 - **URL normalization.** Canonical form for deduplication.
 - **Graceful degradation.** Skip failed resources, continue crawling.
+- **robots.txt compliance.** Respects Disallow/Allow rules and Crawl-delay.
 
 ## Build
 
 ```sh
-make            # build archiver-bot binary
+make            # build sbot binary
 make clean      # remove build artifacts
 make install    # install to /usr/local/bin
 ```
@@ -128,14 +132,14 @@ Dependencies: `libcurl` (via pkg-config)
 ## Usage
 
 ```sh
-# Single page
-archiver-bot https://example.com/article
+# Single page archive (GWTAR format)
+sbot https://example.com/article
 
 # Whole site (recursive, depth 3)
-archiver-bot -r -d 3 https://example.com
+sbot -r -d 3 https://example.com
 
 # Verbose with custom output dir
-archiver-bot -v -r -o ./archive https://example.com
+sbot -v -r -o ./archive https://example.com
 ```
 
 ## Git Conventions
