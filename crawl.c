@@ -192,14 +192,13 @@ url_normalize(const char *url)
 			norm[len - 1] = '\0';
 	}
 
-	/* Lowercase the domain part */
-	p = norm;
-	if (str_starts_with(p, "https://"))
-		p += 8;
-	else if (str_starts_with(p, "http://"))
-		p += 7;
-	while (*p && *p != '/')
-		*p++ = tolower((unsigned char)*p);
+	/* Lowercase the domain part (use url_path to find where domain ends) */
+	{
+		const char *path = url_path(norm);
+		char *dom_end = (char *)path;
+		for (char *q = norm; q < dom_end; q++)
+			*q = tolower((unsigned char)*q);
+	}
 
 	/* Remove default port :80 or :443 */
 	p = norm;
@@ -241,33 +240,26 @@ url_normalize(const char *url)
 char *
 url_to_path(const char *url, const char *base_domain)
 {
-	const char *path_start;
+	const char *p;
 	char *path, *query, *hash, *new_path;
 	size_t len, new_len;
 
 	(void)base_domain;
 
-	path_start = url;
-	/* Skip protocol */
-	if (str_starts_with(url, "https://"))
-		path_start = url + 8;
-	else if (str_starts_with(url, "http://"))
-		path_start = url + 7;
-
-	/* Skip domain */
-	while (*path_start && *path_start != '/')
-		path_start++;
+	/* Use the new central helper — removes 8 lines of duplication */
+	p = url_path(url);
 
 	/* No path or just "/" -> index.html */
-	if (!*path_start || strcmp(path_start, "/") == 0)
+	if (!*p || strcmp(p, "/") == 0)
 		return xstrdup("index.html");
 
-	/* Skip leading slash */
-	if (*path_start == '/')
-		path_start++;
+	/* Skip the leading slash for the stored path */
+	p++;
+	if (*p == '\0')
+		return xstrdup("index.html");
 
 	/* Copy path, strip query/fragment */
-	path = xstrdup(path_start);
+	path = xstrdup(p);
 	query = strchr(path, '?');
 	if (query)
 		*query = '\0';
@@ -282,14 +274,29 @@ url_to_path(const char *url, const char *base_domain)
 		len--;
 	}
 
-	/* If path doesn't end in .html/.htm, treat as directory */
-	if (len > 0 && !str_ends_with(path, ".html") &&
-	    !str_ends_with(path, ".htm")) {
-		new_len = len + 12;
-		new_path = xmalloc(new_len);
-		snprintf(new_path, new_len, "%s/index.html", path);
-		free(path);
-		path = new_path;
+	/* Basic sanitization for messy legacy filenames (vintage dumps, etc.) */
+	{
+		char *s;
+		for (s = path; *s; s++) {
+			/* Replace dangerous or annoying characters */
+			if (*s == '\\' || *s == ':' || *s == '*' || *s == '?' ||
+			    *s == '"' || *s == '<' || *s == '>' || *s == '|') {
+				*s = '_';
+			}
+		}
+	}
+
+	/* If last path segment has no extension (no '.'), treat as directory */
+	{
+		const char *last = strrchr(path, '/');
+		last = last ? last + 1 : path;
+		if (len > 0 && strchr(last, '.') == NULL) {
+			new_len = len + 12;
+			new_path = xmalloc(new_len);
+			snprintf(new_path, new_len, "%s/index.html", path);
+			free(path);
+			path = new_path;
+		}
 	}
 
 	return path;

@@ -11,6 +11,7 @@ typedef enum {
     RES_CSS,
     RES_FONT,
     RES_PAGE,
+    RES_ASSET,   /* downloadable non-HTML: pdf, images via <a>, etc. */
     RES_OTHER
 } ResourceType;
 

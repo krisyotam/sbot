@@ -6,8 +6,8 @@
 #include <stddef.h>
 
 /* Retry settings */
-#define FETCH_MAX_RETRIES  3
-#define FETCH_RETRY_BASE   2  /* base seconds for exponential backoff */
+#define FETCH_MAX_RETRIES  5   /* increased for old/slow archival targets */
+#define FETCH_RETRY_BASE   2   /* base seconds for exponential backoff */
 
 /* Response structure */
 typedef struct {

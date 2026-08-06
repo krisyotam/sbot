@@ -137,13 +137,31 @@ guess_resource_type(const char *url, const char *tag_name)
         return RES_OTHER;
     }
 
-    if (strcasecmp(tag_name, "a") == 0)
-        return RES_PAGE;
+    if (strcasecmp(tag_name, "a") == 0) {
+        /* <a> links: page by default, but assets (pdf, binaries, extra images) get RES_ASSET */
+        char *lower = xstrdup(url);
+        str_tolower(lower);
+        int is_asset = strstr(lower, ".pdf") || strstr(lower, ".ps") ||
+                       strstr(lower, ".zip") || strstr(lower, ".tar") ||
+                       strstr(lower, ".gz") || strstr(lower, ".doc") ||
+                       strstr(lower, ".rtf") || strstr(lower, ".txt") ||
+                       strstr(lower, ".csv") || strstr(lower, ".xls");
+        if (!is_asset) {
+            /* also treat linked images via <a> as assets so they get saved locally */
+            if (strstr(lower, ".jpg") || strstr(lower, ".jpeg") ||
+                strstr(lower, ".png") || strstr(lower, ".gif") ||
+                strstr(lower, ".webp") || strstr(lower, ".svg") ||
+                strstr(lower, ".ico"))
+                is_asset = 1;
+        }
+        free(lower);
+        return is_asset ? RES_ASSET : RES_PAGE;
+    }
 
     if (strcasecmp(tag_name, "script") == 0)
         return RES_OTHER;
 
-    /* Check by extension */
+    /* Check by extension (for img/link etc that weren't caught above) */
     char *lower = xstrdup(url);
     str_tolower(lower);
 
@@ -159,6 +177,8 @@ guess_resource_type(const char *url, const char *tag_name)
              strstr(lower, ".ttf") || strstr(lower, ".otf") ||
              strstr(lower, ".eot"))
         type = RES_FONT;
+    else if (strstr(lower, ".pdf"))
+        type = RES_ASSET;
 
     free(lower);
     return type;

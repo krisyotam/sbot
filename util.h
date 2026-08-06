@@ -25,6 +25,17 @@ char *url_resolve(const char *base, const char *relative);
 char *url_get_domain(const char *url);
 int url_same_domain(const char *url1, const char *url2);
 
+/* Return pointer into url at the start of the path component (after domain).
+ * Handles http:// https:// // and bare paths. Returns "/" if no path.
+ * Never returns NULL. The returned pointer is inside the original string. */
+const char *url_path(const char *url);
+
+/* Compute a relative path from 'from' (current file path) to 'to' (target file path).
+ * Both are paths relative to site root, e.g. "dir/page.htm" and "other/file.pdf".
+ * Returns e.g. "../other/file.pdf" or "file.pdf" as needed for <a href> rewriting.
+ * Caller must free the result. */
+char *make_relative_path(const char *from, const char *to);
+
 /* File utilities */
 char *get_mime_type(const char *url);
 char *sanitize_filename(const char *url);

@@ -14,8 +14,16 @@
 /* Network settings */
 #define USER_AGENT       "sbot/0.3 (+https://krisyotam.com)"
 #define CONNECT_TIMEOUT  30L
-#define REQUEST_TIMEOUT  60L
+#define REQUEST_TIMEOUT  90L   /* raised for slow/old archival targets */
 #define MAX_REDIRECTS    10L
+
+/*
+ * Archival mode: ignore SSL certificate errors.
+ * Useful when archiving old sites with expired/self-signed certs.
+ * 0 = strict (default, safe for normal use)
+ * 1 = ignore (for deliberate archival of historical web)
+ */
+#define IGNORE_SSL_ERRORS 0
 
 /* Crawl settings */
 #define MAX_DEPTH        5

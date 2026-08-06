@@ -98,10 +98,13 @@ fetch_url(const char *url)
 		                 CONNECT_TIMEOUT);
 		curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT,
 		                 REQUEST_TIMEOUT);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1L);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2L);
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, IGNORE_SSL_ERRORS ? 0L : 1L);
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, IGNORE_SSL_ERRORS ? 0L : 2L);
 		curl_easy_setopt(curl_handle, CURLOPT_ACCEPT_ENCODING,
 		                 "");
+
+		/* Enforce size limit to prevent pathological bloat (see config.h) */
+		curl_easy_setopt(curl_handle, CURLOPT_MAXFILESIZE, MAX_FILE_SIZE);
 
 		res = curl_easy_perform(curl_handle);
 
@@ -145,6 +148,14 @@ fetch_url(const char *url)
 			response_free(resp);
 			resp = NULL;
 			continue;
+		}
+
+		/* Enforce MAX_FILE_SIZE after download (some servers ignore CURLOPT_MAXFILESIZE) */
+		if (resp->size > MAX_FILE_SIZE) {
+			warn("fetch: %s: exceeded MAX_FILE_SIZE (%zu > %d), skipping",
+			     url, resp->size, MAX_FILE_SIZE);
+			response_free(resp);
+			return NULL;
 		}
 
 		return resp;
